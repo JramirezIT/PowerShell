@@ -1,0 +1,28 @@
+# Import the Active Directory module
+Import-Module ActiveDirectory
+
+# List of computer names to remove
+$ComputerList = @(
+    "VALLT190", "VALLT142", "VALLT169", "VALLT022", "VALLT279", "VALLT186", "VALLT198",
+    "VALPC088", "VALPC080", "VALPC041", "VALPC035", "VALPC029", "VALPC067", "VALPC079",
+    "VALPC069", "VALPC037", "VALPC061", "VALPC019", "VALPC024", "VALLT251", "VALLT006",
+    "DESKTOP-BGTIJ7G", "VALPC044", "VALPC021", "VALLT151", "VALPC064", "BDS-DDT2",
+    "VALLT016", "VALLT259", "VALPC015", "VALLT072", "VALLT269", "VALLT187", "VALLT102",
+    "VALLT194", "VALLT260", "VALLT070", "ASVAL07", "VALLT035", "VALPC086", "VALLT116",
+    "VALLT071", "VALPC028", "VALLT184", "VALPC042"
+)
+
+foreach ($ComputerName in $ComputerList) {
+    $Computer = Get-ADComputer -Filter {Name -eq $ComputerName} -ErrorAction SilentlyContinue
+
+    if ($Computer) {
+        try {
+            Remove-ADComputer -Identity $Computer.DistinguishedName -Confirm:$false
+            Write-Host "Successfully removed computer: $ComputerName" -ForegroundColor Green
+        } catch {
+            Write-Host "Failed to remove ${ComputerName}: $_" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Computer '$ComputerName' not found in Active Directory" -ForegroundColor Yellow
+    }
+}

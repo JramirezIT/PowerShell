@@ -1,0 +1,34 @@
+
+
+#First - Connect-AzureAD
+
+
+# Replace with the ObjectIds of the source and target users
+$sourceUser = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+$targetUser = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Get ObjectIds of all groups the source user is a member of
+$groups = Get-AzureADUserMembership -ObjectId $sourceUser | Select-Object -ExpandProperty ObjectId
+
+foreach ($group in $groups) {
+    # Get group details to check the group type
+    $groupDetails = Get-AzureADGroup -ObjectId $group
+
+    # Check if the group is of a supported type
+    if ($groupDetails.GroupTypes -contains "Unified" -or $groupDetails.SecurityEnabled -eq $true -or $groupDetails.MailEnabled -eq $true) {
+        # Check if the target user is already a member of the group
+        $existingMembers = Get-AzureADGroupMember -ObjectId $group | Select-Object -ExpandProperty ObjectId
+        if ($existingMembers -notcontains $targetUser) {
+            try {
+                Add-AzureADGroupMember -ObjectId $group -RefObjectId $targetUser -ErrorAction Stop
+                Write-Output "Added $targetUser to group $group (Type: $($groupDetails.GroupTypes)) successfully."
+            } catch {
+                Write-Output "Failed to add $targetUser to group $group. $_"
+            }
+        } else {
+            Write-Output "$targetUser is already a member of group $group."
+        }
+    } else {
+        Write-Output "Group $group is not of a supported type. Skipping."
+    }
+}

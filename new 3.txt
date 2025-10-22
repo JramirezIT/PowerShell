@@ -1,0 +1,16 @@
+#pulling all groups in example.local 
+
+
+PS C:\Windows\system32> $groups = Get-ADGroup -Filter * -SearchBase "OU=example Security Groups,DC=example,DC=local" -Properties Description
+
+PS C:\Windows\system32> $groups | Select-Object Name, Description
+
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes "Group.ReadWrite.All"
+
+# Create the cloud-only group in Entra ID
+New-MgGroup -DisplayName "COMP-OPERATIONS-CLIENT-SUCCESS" `
+            -MailNickname "COMP-OPERATIONS-CLIENT-SUCCESS" `
+            -SecurityEnabled `
+            -MailEnabled:$false `
+            -Description "Description for SEC-OPERATIONS-CLIENT-SUCCESS"
