@@ -1,0 +1,42 @@
+@echo off
+setlocal
+
+:: --- Config ---
+set "DRIVE=X:"
+set "HOST=nc.neopanthor.zebudevelopment.com"
+set "WEBDAV_PATH=remote.php\webdav"
+set "UNC=\\%HOST%@SSL\DavWWWRoot\%WEBDAV_PATH%"
+
+:: --- Optional: quick check that WebClient is running (user cannot start it) ---
+sc query WebClient | find /i "RUNNING" >nul
+if errorlevel 1 (
+  echo WebClient service is not running. Please contact IT or run the Admin setup first.
+  exit /b 1
+)
+
+:: --- Clean up any existing mapping (ignore errors) ---
+net use %DRIVE% /delete /y >nul 2>&1
+
+:: --- Try to map without prompting (works if creds already saved) ---
+net use %DRIVE% "%UNC%" /persistent:yes >nul 2>&1
+if errorlevel 1 (
+  echo Saving credentials securely. You will be prompted once.
+
+  :: Prompt for BOTH username and password (no creds in the script).
+  :: This stores them in Windows Credential Manager for this user profile.
+  cmdkey /add:%HOST%
+  if errorlevel 1 (
+    echo Failed to save credentials. Mapping aborted.
+    exit /b 1
+  )
+
+  :: Retry the mapping now that creds are stored
+  net use %DRIVE% "%UNC%" /persistent:yes
+  if errorlevel 1 (
+    echo Failed to map %DRIVE%. Check your username/password, TLS trust, and path.
+    exit /b 1
+  )
+)
+
+echo %DRIVE% mapped to %UNC% successfully.
+endlocal
